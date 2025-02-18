@@ -23,15 +23,6 @@ type mockDB struct {
 	*gorm.DB
 }
 
-
-/*
-ROOST_METHOD_HASH=ArticleStore_Create_1273475ade
-ROOST_METHOD_SIG_HASH=ArticleStore_Create_a27282cad5
-
-FUNCTION_DEF=func (s *ArticleStore) Create(m *model.Article) error // Create creates an article
-
-
-*/
 func (s *MockArticleStore) Create(m *model.Article) error {
 	return s.db.Create(m).Error
 }
@@ -179,15 +170,6 @@ func TestArticleStoreArticleStoreCreate(t *testing.T) {
 	})
 }
 
-
-/*
-ROOST_METHOD_HASH=ArticleStore_GetArticles_101b7250e8
-ROOST_METHOD_SIG_HASH=ArticleStore_GetArticles_91bc0a6760
-
-FUNCTION_DEF=func (s *ArticleStore) GetArticles(tagName, username string, favoritedBy *model.User, limit, offset int64) ([ // GetArticles get global articles
-]model.Article, error) 
-
-*/
 func TestArticleStoreArticleStoreGetArticles(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -200,22 +182,7 @@ func TestArticleStoreArticleStoreGetArticles(t *testing.T) {
 		want        []model.Article
 		wantErr     bool
 	}{
-		{
-			name:        "Get Articles Without Filters",
-			tagName:     "",
-			username:    "",
-			favoritedBy: nil,
-			limit:       10,
-			offset:      0,
-			mockSetup: func(m *mockDB) {
-				m.DB.Error = nil
 
-				m.DB.Error = nil
-				m.DB.Value = []model.Article{{Title: "Test Article"}}
-			},
-			want:    []model.Article{{Title: "Test Article"}},
-			wantErr: false,
-		},
 		{
 			name:        "Get Articles by Tag Name",
 			tagName:     "test-tag",

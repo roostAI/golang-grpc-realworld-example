@@ -13,15 +13,6 @@ import (
 
 
 
-
-/*
-ROOST_METHOD_HASH=NewUserStore_fb599438e5
-ROOST_METHOD_SIG_HASH=NewUserStore_c0075221af
-
-FUNCTION_DEF=func NewUserStore(db *gorm.DB) *UserStore // NewUserStore returns a new UserStore
-
-
-*/
 func TestNewUserStore(t *testing.T) {
 	tests := []struct {
 		name string
