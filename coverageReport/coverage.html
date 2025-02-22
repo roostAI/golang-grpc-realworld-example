@@ -1,0 +1,1168 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>handler: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/raahii/golang-grpc-realworld-example/handler/article.go (0.0%)</option>
+				
+				<option value="file1">github.com/raahii/golang-grpc-realworld-example/handler/comment.go (0.0%)</option>
+				
+				<option value="file2">github.com/raahii/golang-grpc-realworld-example/handler/handler.go (0.0%)</option>
+				
+				<option value="file3">github.com/raahii/golang-grpc-realworld-example/handler/profile.go (0.0%)</option>
+				
+				<option value="file4">github.com/raahii/golang-grpc-realworld-example/handler/tag.go (0.0%)</option>
+				
+				<option value="file5">github.com/raahii/golang-grpc-realworld-example/handler/user.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package handler
+
+import (
+        "context"
+        "fmt"
+        "strconv"
+
+        "github.com/raahii/golang-grpc-realworld-example/auth"
+        "github.com/raahii/golang-grpc-realworld-example/model"
+        pb "github.com/raahii/golang-grpc-realworld-example/proto"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
+)
+
+// CreateArticle creates a article
+func (h *Handler) CreateArticle(ctx context.Context, req *pb.CreateAritcleRequest) (*pb.ArticleResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("create article")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("unauthenticated")
+                return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("current user not found")
+                return nil, status.Error(codes.NotFound, "user not found")
+        }</span>
+
+        <span class="cov0" title="0">ra := req.GetArticle()
+        tags := make([]model.Tag, 0, len(ra.GetTagList()))
+        for _, t := range ra.GetTagList() </span><span class="cov0" title="0">{
+                tags = append(tags, model.Tag{Name: t})
+        }</span>
+
+        <span class="cov0" title="0">article := model.Article{
+                Title:       ra.GetTitle(),
+                Description: ra.GetDescription(),
+                Body:        ra.GetBody(),
+                Author:      *currentUser,
+                Tags:        tags,
+        }
+
+        err = article.Validate()
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "validation error"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        <span class="cov0" title="0">err = h.as.Create(&amp;article)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "Failed to create user."
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Canceled, msg)
+        }</span>
+
+        // get whether the article is current user's favorite
+        <span class="cov0" title="0">favorited := true
+        pa := article.ProtoArticle(favorited)
+
+        // get whether current user follows article author
+        following, err := h.us.IsFollowing(currentUser, &amp;article.Author)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get following status"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+        <span class="cov0" title="0">pa.Author = article.Author.ProtoProfile(following)
+
+        return &amp;pb.ArticleResponse{Article: pa}, nil</span>
+}
+
+// GetArticle gets a article
+func (h *Handler) GetArticle(ctx context.Context, req *pb.GetArticleRequest) (*pb.ArticleResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("get article")
+
+        // get article
+        articleID, err := strconv.Atoi(req.GetSlug())
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("cannot convert slug (%s) into integer", req.GetSlug())
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">article, err := h.as.GetByID(uint(articleID))
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("requested article (slug=%d) not found", articleID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        // get current user if exists
+        <span class="cov0" title="0">userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                pa := article.ProtoArticle(false)
+                pa.Author = article.Author.ProtoProfile(false)
+                return &amp;pb.ArticleResponse{Article: pa}, nil
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("token is valid but the user not found")
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        // get whether the article is current user's favorite
+        <span class="cov0" title="0">favorited, err := h.as.IsFavorited(article, currentUser)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get favorited status"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, "internal server error")
+        }</span>
+        <span class="cov0" title="0">pa := article.ProtoArticle(favorited)
+
+        // get whether current user follows article author
+        following, err := h.us.IsFollowing(currentUser, &amp;article.Author)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get following status"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+        <span class="cov0" title="0">pa.Author = article.Author.ProtoProfile(following)
+
+        return &amp;pb.ArticleResponse{Article: pa}, nil</span>
+}
+
+// GetArticles gets recent articles globally
+func (h *Handler) GetArticles(ctx context.Context, req *pb.GetArticlesRequest) (*pb.ArticlesResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("get articles")
+
+        limitQuery := req.GetLimit()
+        if limitQuery == 0 </span><span class="cov0" title="0">{
+                limitQuery = 20
+        }</span>
+
+        <span class="cov0" title="0">var favoritedBy *model.User
+        if req.GetFavorited() != "" </span><span class="cov0" title="0">{
+                var err error
+                favoritedBy, err = h.us.GetByUsername(req.GetFavorited())
+                if err != nil </span><span class="cov0" title="0">{
+                        // h.logger.Error().Err(err).Msg("failed to get user for favorited query")
+                        // return nil, status.Error(codes.InvalidArgument, "invalid favorited query")
+                        favoritedBy = nil
+                }</span>
+        }
+
+        <span class="cov0" title="0">as, err := h.as.GetArticles(req.GetTag(), req.GetAuthor(), favoritedBy, limitQuery, req.GetOffset())
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("failed to search articles in the database")
+                return nil, status.Error(codes.Aborted, "internal server error")
+        }</span>
+
+        <span class="cov0" title="0">var currentUser *model.User
+        userID, err := auth.GetUserID(ctx)
+        if err == nil </span><span class="cov0" title="0">{
+                currentUser, err = h.us.GetByID(userID)
+                if err != nil </span><span class="cov0" title="0">{
+                        h.logger.Error().Err(err).Msg("current user not found")
+                        return nil, status.Error(codes.NotFound, "user not found")
+                }</span>
+        }
+
+        <span class="cov0" title="0">pas := make([]*pb.Article, 0, len(as))
+        for _, a := range as </span><span class="cov0" title="0">{
+                // get whether the article is current user's favorite
+                favorited, err := h.as.IsFavorited(&amp;a, currentUser)
+                if err != nil </span><span class="cov0" title="0">{
+                        msg := "failed to get favorited status"
+                        h.logger.Error().Err(err).Msg(msg)
+                        return nil, status.Error(codes.Aborted, "internal server error")
+                }</span>
+                <span class="cov0" title="0">pa := a.ProtoArticle(favorited)
+
+                // get whether current user follows article author
+                following, err := h.us.IsFollowing(currentUser, &amp;a.Author)
+                if err != nil </span><span class="cov0" title="0">{
+                        msg := "failed to get following status"
+                        h.logger.Error().Err(err).Msg(msg)
+                        return nil, status.Error(codes.NotFound, "internal server error")
+                }</span>
+                <span class="cov0" title="0">pa.Author = a.Author.ProtoProfile(following)
+
+                pas = append(pas, pa)</span>
+        }
+
+        <span class="cov0" title="0">return &amp;pb.ArticlesResponse{Articles: pas, ArticlesCount: int32(len(pas))}, nil</span>
+}
+
+// GetFeedArticles gets recent articles from users current user follow
+func (h *Handler) GetFeedArticles(ctx context.Context, req *pb.GetFeedArticlesRequest) (*pb.ArticlesResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("get feed article")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("unauthenticated")
+                return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("current user not found")
+                return nil, status.Error(codes.NotFound, "user not found")
+        }</span>
+
+        <span class="cov0" title="0">userIDs, err := h.us.GetFollowingUserIDs(currentUser)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("failed to get following user ids of user %d", currentUser.ID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+
+        <span class="cov0" title="0">limitQuery := req.GetLimit()
+        if limitQuery == 0 </span><span class="cov0" title="0">{
+                limitQuery = 20
+        }</span>
+
+        <span class="cov0" title="0">as, err := h.as.GetFeedArticles(userIDs, limitQuery, req.GetOffset())
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get articles by user ids"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+
+        <span class="cov0" title="0">pas := make([]*pb.Article, 0, len(as))
+        for _, a := range as </span><span class="cov0" title="0">{
+                // get whether the article is current user's favorite
+                favorited, err := h.as.IsFavorited(&amp;a, currentUser)
+                if err != nil </span><span class="cov0" title="0">{
+                        msg := "failed to get favorited status"
+                        h.logger.Error().Err(err).Msg(msg)
+                        return nil, status.Error(codes.Aborted, "internal server error")
+                }</span>
+                <span class="cov0" title="0">pa := a.ProtoArticle(favorited)
+
+                // get whether current user follows article author
+                following, err := h.us.IsFollowing(currentUser, &amp;a.Author)
+                if err != nil </span><span class="cov0" title="0">{
+                        msg := "failed to get following status"
+                        h.logger.Error().Err(err).Msg(msg)
+                        return nil, status.Error(codes.NotFound, "internal server error")
+                }</span>
+                <span class="cov0" title="0">pa.Author = a.Author.ProtoProfile(following)
+
+                pas = append(pas, pa)</span>
+        }
+
+        <span class="cov0" title="0">return &amp;pb.ArticlesResponse{Articles: pas, ArticlesCount: int32(len(pas))}, nil</span>
+}
+
+// UpdateArticle updates an article
+func (h *Handler) UpdateArticle(ctx context.Context, req *pb.UpdateArticleRequest) (*pb.ArticleResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("update article")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "unauthenticated"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, msg)
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "not user found"
+                err = fmt.Errorf("token is valid but the user not found: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        <span class="cov0" title="0">slug := req.GetArticle().GetSlug()
+        articleID, err := strconv.Atoi(slug)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("cannot convert slug (%s) into integer", slug)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">article, err := h.as.GetByID(uint(articleID))
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("requested article (slug=%d) not found", articleID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">if article.Author.ID != currentUser.ID </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("user(id=%d) attempted to update other user's article(id=%d)",
+                        currentUser.ID, article.ID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, "forbidden")
+        }</span>
+
+        <span class="cov0" title="0">article.Overwrite(
+                req.GetArticle().GetTitle(),
+                req.GetArticle().GetDescription(),
+                req.GetArticle().GetBody(),
+        )
+
+        err = article.Validate()
+        if err != nil </span><span class="cov0" title="0">{
+                err = fmt.Errorf("validation error: %w", err)
+                h.logger.Error().Err(err).Msg("validation error")
+                return nil, status.Error(codes.InvalidArgument, err.Error())
+        }</span>
+
+        <span class="cov0" title="0">if err := h.as.Update(article); err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("failed to update article")
+                return nil, status.Error(codes.InvalidArgument, "internal server error")
+        }</span>
+
+        // get whether the article is current user's favorite
+        <span class="cov0" title="0">favorited := true
+        pa := article.ProtoArticle(favorited)
+
+        // get whether current user follows article author
+        following, err := h.us.IsFollowing(currentUser, &amp;article.Author)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get following status"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+        <span class="cov0" title="0">pa.Author = article.Author.ProtoProfile(following)
+
+        return &amp;pb.ArticleResponse{Article: pa}, nil</span>
+}
+
+// DeleteArticle deletes an article
+func (h *Handler) DeleteArticle(ctx context.Context, req *pb.DeleteArticleRequest) (*pb.Empty, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("delete article")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "unauthenticated"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, msg)
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "not user found"
+                err = fmt.Errorf("token is valid but the user not found: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        <span class="cov0" title="0">slug := req.GetSlug()
+        articleID, err := strconv.Atoi(slug)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("cannot convert slug (%s) into integer", slug)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">article, err := h.as.GetByID(uint(articleID))
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("requested article (slug=%d) not found", articleID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">if article.Author.ID != currentUser.ID </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("user(id=%d) attempted to update other user's article(id=%d)",
+                        currentUser.ID, article.ID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, "forbidden")
+        }</span>
+
+        <span class="cov0" title="0">if err := h.as.Delete(article); err != nil </span><span class="cov0" title="0">{
+                msg := "failed to delete article"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, msg)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.Empty{}, nil</span>
+}
+
+// FavoriteArticle add an article to user favorites
+func (h *Handler) FavoriteArticle(ctx context.Context, req *pb.FavoriteArticleRequest) (*pb.ArticleResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("favorite article")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "unauthenticated"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, msg)
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "not user found"
+                err = fmt.Errorf("token is valid but the user not found: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        <span class="cov0" title="0">slug := req.GetSlug()
+        articleID, err := strconv.Atoi(slug)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("cannot convert slug (%s) into integer", slug)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">article, err := h.as.GetByID(uint(articleID))
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("requested article (slug=%d) not found", articleID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">err = h.as.AddFavorite(article, currentUser)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to add favorite"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        // get whether current user follows article author
+        <span class="cov0" title="0">favorited := true
+        pa := article.ProtoArticle(favorited)
+        following, err := h.us.IsFollowing(currentUser, &amp;article.Author)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get following status"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+        <span class="cov0" title="0">pa.Author = article.Author.ProtoProfile(following)
+
+        return &amp;pb.ArticleResponse{Article: pa}, nil</span>
+}
+
+// UnfavoriteArticle removes an article from user favorites
+func (h *Handler) UnfavoriteArticle(ctx context.Context, req *pb.UnfavoriteArticleRequest) (*pb.ArticleResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("unfavorite article")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "unauthenticated"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, msg)
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "not user found"
+                err = fmt.Errorf("token is valid but the user not found: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        <span class="cov0" title="0">slug := req.GetSlug()
+        articleID, err := strconv.Atoi(slug)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("cannot convert slug (%s) into integer", slug)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">article, err := h.as.GetByID(uint(articleID))
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("requested article (slug=%d) not found", articleID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">err = h.as.DeleteFavorite(article, currentUser)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to remove favorite"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        // get whether current user follows article author
+        <span class="cov0" title="0">favorited := false
+        pa := article.ProtoArticle(favorited)
+        following, err := h.us.IsFollowing(currentUser, &amp;article.Author)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get following status"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+        <span class="cov0" title="0">pa.Author = article.Author.ProtoProfile(following)
+
+        return &amp;pb.ArticleResponse{Article: pa}, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package handler
+
+import (
+        "context"
+        "fmt"
+        "strconv"
+
+        "github.com/raahii/golang-grpc-realworld-example/auth"
+        "github.com/raahii/golang-grpc-realworld-example/model"
+        pb "github.com/raahii/golang-grpc-realworld-example/proto"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
+)
+
+// CreateComment create a comment for an article
+func (h *Handler) CreateComment(ctx context.Context, req *pb.CreateCommentRequest) (*pb.CommentResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Msgf("Create comment | req: %+v", req)
+
+        // get current user
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("unauthenticated")
+                return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("current user not found")
+                return nil, status.Error(codes.NotFound, "user not found")
+        }</span>
+
+        // get article
+        <span class="cov0" title="0">articleID, err := strconv.Atoi(req.GetSlug())
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("cannot convert slug (%s) into integer", req.GetSlug())
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">article, err := h.as.GetByID(uint(articleID))
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("requested article (slug=%d) not found", articleID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        // new comment
+        <span class="cov0" title="0">comment := model.Comment{
+                Body:      req.GetComment().GetBody(),
+                Author:    *currentUser,
+                ArticleID: article.ID,
+        }
+
+        err = comment.Validate()
+        if err != nil </span><span class="cov0" title="0">{
+                err = fmt.Errorf("validation error: %w", err)
+                h.logger.Error().Err(err).Msg("validation error")
+                return nil, status.Error(codes.InvalidArgument, err.Error())
+        }</span>
+
+        // create comment
+        <span class="cov0" title="0">err = h.as.CreateComment(&amp;comment)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to create comment."
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, msg)
+        }</span>
+
+        // map model.Comment to pb.Comment
+        <span class="cov0" title="0">pc := comment.ProtoComment()
+        pc.Author = currentUser.ProtoProfile(false)
+
+        return &amp;pb.CommentResponse{Comment: pc}, nil</span>
+}
+
+// GetComments gets comments of the article
+func (h *Handler) GetComments(ctx context.Context, req *pb.GetCommentsRequest) (*pb.CommentsResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Msgf("Get comments | req: %+v", req)
+
+        // get article
+        articleID, err := strconv.Atoi(req.GetSlug())
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("cannot convert slug (%s) into integer", req.GetSlug())
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">article, err := h.as.GetByID(uint(articleID))
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("requested article (slug=%d) not found", articleID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">comments, err := h.as.GetComments(article)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get comments"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, msg)
+        }</span>
+
+        <span class="cov0" title="0">var currentUser *model.User
+        userID, err := auth.GetUserID(ctx)
+        if err == nil </span><span class="cov0" title="0">{
+                currentUser, err = h.us.GetByID(userID)
+                if err != nil </span><span class="cov0" title="0">{
+                        h.logger.Error().Err(err).Msg("current user not found")
+                        return nil, status.Error(codes.NotFound, "user not found")
+                }</span>
+        }
+
+        <span class="cov0" title="0">pcs := make([]*pb.Comment, 0, len(comments))
+        for _, c := range comments </span><span class="cov0" title="0">{
+                pc := c.ProtoComment()
+
+                // get whether current user follows article author
+                following, err := h.us.IsFollowing(currentUser, &amp;c.Author)
+                if err != nil </span><span class="cov0" title="0">{
+                        msg := "failed to get following status"
+                        h.logger.Error().Err(err).Msg(msg)
+                        return nil, status.Error(codes.NotFound, "internal server error")
+                }</span>
+                <span class="cov0" title="0">pc.Author = c.Author.ProtoProfile(following)
+
+                pcs = append(pcs, pc)</span>
+        }
+
+        <span class="cov0" title="0">return &amp;pb.CommentsResponse{Comments: pcs}, nil</span>
+}
+
+// DeleteComment delete a commnet of the article
+func (h *Handler) DeleteComment(ctx context.Context, req *pb.DeleteCommentRequest) (*pb.Empty, error) <span class="cov0" title="0">{
+        h.logger.Info().Msgf("Delete comment | req: %+v", req)
+
+        // get current user
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("unauthenticated")
+                return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("current user not found")
+                return nil, status.Error(codes.NotFound, "user not found")
+        }</span>
+
+        <span class="cov0" title="0">commentID, err := strconv.Atoi(req.GetId())
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("cannot convert id (%s) into integer", req.GetId())
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, "invalid article id")
+        }</span>
+
+        <span class="cov0" title="0">comment, err := h.as.GetCommentByID(uint(commentID))
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get comment"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        <span class="cov0" title="0">if req.GetSlug() != fmt.Sprintf("%d", comment.ArticleID) </span><span class="cov0" title="0">{
+                msg := "the comment is not in the article"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        <span class="cov0" title="0">if comment.UserID != currentUser.ID </span><span class="cov0" title="0">{
+                msg := "forbidden"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        <span class="cov0" title="0">err = h.as.DeleteComment(comment)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to delete comment"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.Empty{}, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package handler
+
+import (
+        "github.com/raahii/golang-grpc-realworld-example/store"
+        "github.com/rs/zerolog"
+)
+
+// Handler definition
+type Handler struct {
+        logger *zerolog.Logger
+        us     *store.UserStore
+        as     *store.ArticleStore
+}
+
+// New returns a new handler with logger and database
+func New(l *zerolog.Logger, us *store.UserStore, as *store.ArticleStore) *Handler <span class="cov0" title="0">{
+        return &amp;Handler{logger: l, us: us, as: as}
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package handler
+
+import (
+        "context"
+        "fmt"
+
+        "github.com/raahii/golang-grpc-realworld-example/auth"
+        pb "github.com/raahii/golang-grpc-realworld-example/proto"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
+)
+
+// ShowProfile gets a profile
+func (h *Handler) ShowProfile(ctx context.Context, req *pb.ShowProfileRequest) (*pb.ProfileResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("show profile")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("unauthenticated")
+                return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("current user not found")
+                return nil, status.Error(codes.NotFound, "user not found")
+        }</span>
+
+        <span class="cov0" title="0">requestUser, err := h.us.GetByUsername(req.GetUsername())
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "user was not found"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        <span class="cov0" title="0">following, err := h.us.IsFollowing(currentUser, requestUser)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get following status"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.ProfileResponse{Profile: requestUser.ProtoProfile(following)}, nil</span>
+}
+
+// FollowUser follow a user
+func (h *Handler) FollowUser(ctx context.Context, req *pb.FollowRequest) (*pb.ProfileResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("follow user")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                err = fmt.Errorf("unauthenticated: %w", err)
+                h.logger.Error().Err(err).Msg("unauthenticated")
+                return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("current user not found")
+                return nil, status.Error(codes.NotFound, "user not found")
+        }</span>
+
+        <span class="cov0" title="0">if currentUser.Username == req.GetUsername() </span><span class="cov0" title="0">{
+                h.logger.Error().Msg("cannot follow yourself")
+                return nil, status.Error(codes.InvalidArgument, "cannot follow yourself")
+        }</span>
+
+        <span class="cov0" title="0">requestUser, err := h.us.GetByUsername(req.GetUsername())
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(fmt.Errorf("user not found: %w", err))
+                return nil, status.Error(codes.NotFound, "user was not found")
+        }</span>
+
+        <span class="cov0" title="0">err = h.us.Follow(currentUser, requestUser)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("failed to follow user: (ID: %d) -&gt; (ID: %d)",
+                        currentUser.ID, requestUser.ID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, "failed to follow user")
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.ProfileResponse{Profile: requestUser.ProtoProfile(true)}, nil</span>
+}
+
+// UnfollowUser unfollow a user
+func (h *Handler) UnfollowUser(ctx context.Context, req *pb.UnfollowRequest) (*pb.ProfileResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("unfollow user")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                err = fmt.Errorf("unauthenticated: %w", err)
+                h.logger.Error().Err(err).Msg("unauthenticated")
+                return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
+        }</span>
+
+        <span class="cov0" title="0">currentUser, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("current user not found")
+                return nil, status.Error(codes.NotFound, "user not found")
+        }</span>
+
+        <span class="cov0" title="0">if currentUser.Username == req.GetUsername() </span><span class="cov0" title="0">{
+                h.logger.Error().Msg("cannot follow yourself")
+                return nil, status.Error(codes.InvalidArgument, "cannot follow yourself")
+        }</span>
+
+        <span class="cov0" title="0">requestUser, err := h.us.GetByUsername(req.GetUsername())
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "user was not found"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        <span class="cov0" title="0">following, err := h.us.IsFollowing(currentUser, requestUser)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "failed to get following status"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, "internal server error")
+        }</span>
+
+        <span class="cov0" title="0">if !following </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("current user is not following request user")
+                return nil, status.Errorf(codes.Unauthenticated, "you are not following the user")
+        }</span>
+
+        <span class="cov0" title="0">err = h.us.Unfollow(currentUser, requestUser)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := fmt.Sprintf("failed to unfollow user: (ID: %d) -&gt; (ID: %d)",
+                        currentUser.ID, requestUser.ID)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, "failed to unfollow user")
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.ProfileResponse{Profile: requestUser.ProtoProfile(false)}, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package handler
+
+import (
+        "context"
+
+        pb "github.com/raahii/golang-grpc-realworld-example/proto"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
+)
+
+// GetTags returns all of tags
+func (h *Handler) GetTags(ctx context.Context, req *pb.Empty) (*pb.TagsResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("get tags")
+
+        tags, err := h.as.GetTags()
+        if err != nil </span><span class="cov0" title="0">{
+                h.logger.Error().Err(err).Msg("faield to get tags")
+                return nil, status.Error(codes.Aborted, "internal server error")
+        }</span>
+
+        <span class="cov0" title="0">tagNames := make([]string, 0, len(tags))
+        for _, t := range tags </span><span class="cov0" title="0">{
+                tagNames = append(tagNames, t.Name)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.TagsResponse{Tags: tagNames}, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package handler
+
+import (
+        "context"
+        "fmt"
+
+        "github.com/raahii/golang-grpc-realworld-example/auth"
+        "github.com/raahii/golang-grpc-realworld-example/model"
+        pb "github.com/raahii/golang-grpc-realworld-example/proto"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
+)
+
+// LoginUser is existing user login
+func (h *Handler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.UserResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("login user")
+
+        u, err := h.us.GetByEmail(req.GetUser().GetEmail())
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "invalid email or password"
+                err = fmt.Errorf("failed to login due to wrong email: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        <span class="cov0" title="0">if !u.CheckPassword(req.GetUser().GetPassword()) </span><span class="cov0" title="0">{
+                h.logger.Error().Msgf("failed to login due to receive wrong password: %s", u.Email)
+                return nil, status.Error(codes.InvalidArgument, "invalid email or password")
+        }</span>
+
+        <span class="cov0" title="0">token, err := auth.GenerateToken(u.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "internal server error"
+                err := fmt.Errorf("Failed to create token. %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, msg)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.UserResponse{User: u.ProtoUser(token)}, nil</span>
+}
+
+// CreateUser registers a new user
+func (h *Handler) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.UserResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("create user")
+
+        u := model.User{
+                Username: req.User.GetUsername(),
+                Email:    req.User.GetEmail(),
+                Password: req.User.GetPassword(),
+        }
+
+        err := u.Validate()
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "validation error"
+                err = fmt.Errorf("validation error: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        <span class="cov0" title="0">err = u.HashPassword()
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "internal server error"
+                err := fmt.Errorf("Failed to hash password, %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, err.Error())
+        }</span>
+
+        <span class="cov0" title="0">err = h.us.Create(&amp;u)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "internal server error"
+                err := fmt.Errorf("Failed to create user. %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Canceled, msg)
+        }</span>
+
+        <span class="cov0" title="0">token, err := auth.GenerateToken(u.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "internal server error"
+                err := fmt.Errorf("Failed to create token. %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, msg)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.UserResponse{User: u.ProtoUser(token)}, nil</span>
+}
+
+// CurrentUser gets a current user
+func (h *Handler) CurrentUser(ctx context.Context, req *pb.Empty) (*pb.UserResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Interface("req", req).Msg("get current user")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "unauthenticated"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, msg)
+        }</span>
+
+        <span class="cov0" title="0">u, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "user not found"
+                err = fmt.Errorf("token is valid but the user not found: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        <span class="cov0" title="0">token, err := auth.GenerateToken(u.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "internal server error"
+                err := fmt.Errorf("Failed to create token. %w", err)
+                h.logger.Error().Err(err)
+                return nil, status.Error(codes.Aborted, msg)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.UserResponse{User: u.ProtoUser(token)}, nil</span>
+}
+
+// UpdateUser updates current user
+func (h *Handler) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UserResponse, error) <span class="cov0" title="0">{
+        h.logger.Info().Msg("update user request")
+
+        userID, err := auth.GetUserID(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "unauthenticated"
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Errorf(codes.Unauthenticated, msg)
+        }</span>
+
+        <span class="cov0" title="0">u, err := h.us.GetByID(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "not user found"
+                err = fmt.Errorf("token is valid but the user not found: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.NotFound, msg)
+        }</span>
+
+        // update non zero-valu fields eonly
+        <span class="cov0" title="0">username := req.GetUser().GetUsername()
+        if username != "" </span><span class="cov0" title="0">{
+                u.Username = username
+        }</span>
+
+        <span class="cov0" title="0">email := req.GetUser().GetEmail()
+        if email != "" </span><span class="cov0" title="0">{
+                u.Email = email
+        }</span>
+
+        <span class="cov0" title="0">password := req.GetUser().GetPassword()
+        if password != "" </span><span class="cov0" title="0">{
+                u.Password = password
+        }</span>
+
+        <span class="cov0" title="0">image := req.GetUser().GetImage()
+        if image != "" </span><span class="cov0" title="0">{
+                u.Image = image
+        }</span>
+
+        <span class="cov0" title="0">bio := req.GetUser().GetBio()
+        if bio != "" </span><span class="cov0" title="0">{
+                u.Bio = bio
+        }</span>
+
+        // validation
+        <span class="cov0" title="0">err = u.Validate()
+        if err != nil </span><span class="cov0" title="0">{
+                err = fmt.Errorf("validation error: %w", err)
+                h.logger.Error().Err(err).Msg("validation error")
+                return nil, status.Error(codes.InvalidArgument, err.Error())
+        }</span>
+
+        <span class="cov0" title="0">if req.GetUser().GetPassword() != "" </span><span class="cov0" title="0">{
+                err = u.HashPassword()
+                if err != nil </span><span class="cov0" title="0">{
+                        msg := "internal server error"
+                        err := fmt.Errorf("Failed to hash password, %w", err)
+                        h.logger.Error().Err(err).Msg(msg)
+                        return nil, status.Error(codes.Aborted, msg)
+                }</span>
+        }
+
+        <span class="cov0" title="0">err = h.us.Update(u)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "internal server error"
+                err = fmt.Errorf("failed to update user: %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.InvalidArgument, msg)
+        }</span>
+
+        <span class="cov0" title="0">token, err := auth.GenerateToken(u.ID)
+        if err != nil </span><span class="cov0" title="0">{
+                msg := "internal server error"
+                err := fmt.Errorf("Failed to create token. %w", err)
+                h.logger.Error().Err(err).Msg(msg)
+                return nil, status.Error(codes.Aborted, msg)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;pb.UserResponse{User: u.ProtoUser(token)}, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
