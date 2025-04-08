@@ -1,0 +1,420 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>store: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/raahii/golang-grpc-realworld-example/store/article.go (1.2%)</option>
+				
+				<option value="file1">github.com/raahii/golang-grpc-realworld-example/store/user.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package store
+
+import (
+        "github.com/jinzhu/gorm"
+        "github.com/raahii/golang-grpc-realworld-example/model"
+)
+
+// ArticleStore is data access struct for user
+type ArticleStore struct {
+        db *gorm.DB
+}
+
+// NewArticleStore returns a new ArticleStore
+func NewArticleStore(db *gorm.DB) *ArticleStore <span class="cov8" title="1">{
+        return &amp;ArticleStore{
+                db: db,
+        }
+}</span>
+
+// GetByID finds an article from id
+func (s *ArticleStore) GetByID(id uint) (*model.Article, error) <span class="cov0" title="0">{
+        var m model.Article
+        err := s.db.Preload("Tags").Preload("Author").Find(&amp;m, id).Error
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;m, nil</span>
+}
+
+// Create creates an article
+func (s *ArticleStore) Create(m *model.Article) error <span class="cov0" title="0">{
+        return s.db.Create(&amp;m).Error
+}</span>
+
+// Update updates an article
+func (s *ArticleStore) Update(m *model.Article) error <span class="cov0" title="0">{
+        return s.db.Model(&amp;m).Update(&amp;m).Error
+}</span>
+
+// GetArticles get global articles
+func (s *ArticleStore) GetArticles(tagName, username string, favoritedBy *model.User, limit, offset int64) ([]model.Article, error) <span class="cov0" title="0">{
+        d := s.db.Preload("Author")
+
+        // author query (has one)
+        if username != "" </span><span class="cov0" title="0">{
+                d = d.Joins("join users on articles.user_id = users.id").
+                        Where("users.username = ?", username)
+        }</span>
+
+        // tag query (many to many)
+        <span class="cov0" title="0">if tagName != "" </span><span class="cov0" title="0">{
+                d = d.Joins(
+                        "join article_tags on articles.id = article_tags.article_id "+
+                                "join tags on tags.id = article_tags.tag_id").
+                        Where("tags.name = ?", tagName)
+        }</span>
+
+        // favorited query
+        <span class="cov0" title="0">if favoritedBy != nil </span><span class="cov0" title="0">{
+                rows, err := s.db.Select("article_id").
+                        Table("favorite_articles").
+                        Where("user_id = ?", favoritedBy.ID).
+                        Offset(offset).Limit(limit).Rows()
+                if err != nil </span><span class="cov0" title="0">{
+                        return []model.Article{}, err
+                }</span>
+                <span class="cov0" title="0">defer rows.Close()
+
+                var ids []uint
+                for rows.Next() </span><span class="cov0" title="0">{
+                        var id uint
+                        rows.Scan(&amp;id)
+                        ids = append(ids, id)
+                }</span>
+                <span class="cov0" title="0">d = d.Where("id in (?)", ids)</span>
+        }
+
+        // offset query, limit query
+        <span class="cov0" title="0">d = d.Offset(offset).Limit(limit)
+
+        var as []model.Article
+        err := d.Find(&amp;as).Error
+
+        return as, err</span>
+}
+
+// GetFeedArticles returns following users' articles
+func (s *ArticleStore) GetFeedArticles(userIDs []uint, limit, offset int64) ([]model.Article, error) <span class="cov0" title="0">{
+        d := s.db.Preload("Author").
+                Where("user_id in (?)", userIDs)
+
+        // offset query, limit query
+        d = d.Offset(offset).Limit(limit)
+
+        var as []model.Article
+        err := d.Find(&amp;as).Error
+
+        return as, err
+}</span>
+
+// Delete deletes an article
+func (s *ArticleStore) Delete(m *model.Article) error <span class="cov0" title="0">{
+        return s.db.Delete(m).Error
+}</span>
+
+// IsFavorited returns whether the article is favorited by the user
+func (s *ArticleStore) IsFavorited(a *model.Article, u *model.User) (bool, error) <span class="cov0" title="0">{
+        if a == nil || u == nil </span><span class="cov0" title="0">{
+                return false, nil
+        }</span>
+
+        <span class="cov0" title="0">var count int
+        err := s.db.Table("favorite_articles").
+                Where("article_id = ? AND user_id = ?", a.ID, u.ID).
+                Count(&amp;count).Error
+        if err != nil </span><span class="cov0" title="0">{
+                return false, err
+        }</span>
+
+        <span class="cov0" title="0">return count &gt; 0, nil</span>
+}
+
+// AddFavorite favorite an article
+func (s *ArticleStore) AddFavorite(a *model.Article, u *model.User) error <span class="cov0" title="0">{
+        tx := s.db.Begin()
+
+        err := tx.Model(a).Association("FavoritedUsers").
+                Append(u).Error
+        if err != nil </span><span class="cov0" title="0">{
+                tx.Rollback()
+                return err
+        }</span>
+
+        <span class="cov0" title="0">err = tx.Model(a).
+                Update("favorites_count", gorm.Expr("favorites_count + ?", 1)).Error
+        if err != nil </span><span class="cov0" title="0">{
+                tx.Rollback()
+                return err
+        }</span>
+
+        <span class="cov0" title="0">tx.Commit()
+        a.FavoritesCount++
+
+        return nil</span>
+}
+
+// DeleteFavorite unfavorite an article
+func (s *ArticleStore) DeleteFavorite(a *model.Article, u *model.User) error <span class="cov0" title="0">{
+        tx := s.db.Begin()
+
+        err := tx.Model(a).Association("FavoritedUsers").
+                Delete(u).Error
+        if err != nil </span><span class="cov0" title="0">{
+                tx.Rollback()
+                return err
+        }</span>
+
+        <span class="cov0" title="0">err = tx.Model(a).
+                Update("favorites_count", gorm.Expr("favorites_count - ?", 1)).Error
+        if err != nil </span><span class="cov0" title="0">{
+                tx.Rollback()
+                return err
+        }</span>
+
+        <span class="cov0" title="0">tx.Commit()
+        a.FavoritesCount--
+
+        return nil</span>
+}
+
+// GetTags creates a article tag
+func (s *ArticleStore) GetTags() ([]model.Tag, error) <span class="cov0" title="0">{
+        var tags []model.Tag
+        if err := s.db.Find(&amp;tags).Error; err != nil </span><span class="cov0" title="0">{
+                return tags, err
+        }</span>
+        <span class="cov0" title="0">return tags, nil</span>
+}
+
+// CreateComment creates a comment of the article
+func (s *ArticleStore) CreateComment(m *model.Comment) error <span class="cov0" title="0">{
+        return s.db.Create(&amp;m).Error
+}</span>
+
+// GetComments gets coments of the article
+func (s *ArticleStore) GetComments(m *model.Article) ([]model.Comment, error) <span class="cov0" title="0">{
+        var cs []model.Comment
+        err := s.db.Preload("Author").
+                Where("article_id = ?", m.ID).
+                Find(&amp;cs).Error
+        if err != nil </span><span class="cov0" title="0">{
+                return cs, err
+        }</span>
+        <span class="cov0" title="0">return cs, nil</span>
+}
+
+// GetCommentByID finds an comment from id
+func (s *ArticleStore) GetCommentByID(id uint) (*model.Comment, error) <span class="cov0" title="0">{
+        var m model.Comment
+        err := s.db.Find(&amp;m, id).Error
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;m, nil</span>
+}
+
+// DeleteComment deletes an comment
+func (s *ArticleStore) DeleteComment(m *model.Comment) error <span class="cov0" title="0">{
+        return s.db.Delete(m).Error
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package store
+
+import (
+        "github.com/jinzhu/gorm"
+        "github.com/raahii/golang-grpc-realworld-example/model"
+)
+
+// UserStore is data access struct for user
+type UserStore struct {
+        db *gorm.DB
+}
+
+// NewUserStore returns a new UserStore
+func NewUserStore(db *gorm.DB) *UserStore <span class="cov0" title="0">{
+        return &amp;UserStore{
+                db: db,
+        }
+}</span>
+
+// GetByEmail finds a user from email
+func (s *UserStore) GetByEmail(email string) (*model.User, error) <span class="cov0" title="0">{
+        var m model.User
+        if err := s.db.Where("email = ?", email).First(&amp;m).Error; err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;m, nil</span>
+}
+
+// GetByID finds a user from id
+func (s *UserStore) GetByID(id uint) (*model.User, error) <span class="cov0" title="0">{
+        var m model.User
+        if err := s.db.Find(&amp;m, id).Error; err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;m, nil</span>
+}
+
+// GetByUsername finds a user from username
+func (s *UserStore) GetByUsername(username string) (*model.User, error) <span class="cov0" title="0">{
+        var m model.User
+        if err := s.db.Where("username = ?", username).First(&amp;m).Error; err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;m, nil</span>
+}
+
+// Create create a user
+func (s *UserStore) Create(m *model.User) error <span class="cov0" title="0">{
+        return s.db.Create(m).Error
+}</span>
+
+// Update update all of user fields
+func (s *UserStore) Update(m *model.User) error <span class="cov0" title="0">{
+        return s.db.Model(m).Update(m).Error
+}</span>
+
+// IsFollowing returns whether user A follows user B or not
+func (s *UserStore) IsFollowing(a *model.User, b *model.User) (bool, error) <span class="cov0" title="0">{
+        if a == nil || b == nil </span><span class="cov0" title="0">{
+                return false, nil
+        }</span>
+
+        <span class="cov0" title="0">var count int
+        err := s.db.Table("follows").
+                Where("from_user_id = ? AND to_user_id = ?", a.ID, b.ID).
+                Count(&amp;count).Error
+        if err != nil </span><span class="cov0" title="0">{
+                return false, err
+        }</span>
+
+        <span class="cov0" title="0">return count &gt; 0, nil</span>
+}
+
+// Follow create follow relashionship to User B from user A
+func (s *UserStore) Follow(a *model.User, b *model.User) error <span class="cov0" title="0">{
+        return s.db.Model(a).Association("Follows").Append(b).Error
+}</span>
+
+// Unfollow delete follow relashionship to User B from user A
+func (s *UserStore) Unfollow(a *model.User, b *model.User) error <span class="cov0" title="0">{
+        return s.db.Model(a).Association("Follows").Delete(b).Error
+}</span>
+
+// GetFollowingUserIDs returns user ids current user follows
+func (s *UserStore) GetFollowingUserIDs(m *model.User) ([]uint, error) <span class="cov0" title="0">{
+        rows, err := s.db.Table("follows").
+                Select("to_user_id").
+                Where("from_user_id = ?", m.ID).
+                Rows()
+        if err != nil </span><span class="cov0" title="0">{
+                return []uint{}, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+
+        var ids []uint
+        for rows.Next() </span><span class="cov0" title="0">{
+                var id uint
+                rows.Scan(&amp;id)
+                ids = append(ids, id)
+        }</span>
+
+        <span class="cov0" title="0">return ids, nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>
