@@ -8,12 +8,6 @@ import (
 	gorm "github.com/jinzhu/gorm"
 )
 
-/*
-ROOST_METHOD_HASH=NewArticleStore_85784abca5
-ROOST_METHOD_SIG_HASH=NewArticleStore_436ae9c986
-
-FUNCTION_DEF=func NewArticleStore(db *gorm.DB) *ArticleStore // NewArticleStore returns a new ArticleStore
-*/
 func TestNewArticleStore(t *testing.T) {
 
 	type testCase struct {
