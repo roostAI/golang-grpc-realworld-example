@@ -1,0 +1,5 @@
+cluster_id,topic_name,partition_id,headers,key,value,timestamp
+"cluster-1","topic-1","1","[{name: 'Header-1', value: 'SGVhZGVyLTE='}, {name: 'Header-2', value: 'SGVhZGVyLTI='}]","{type: 'BINARY', data: 'Zm9vYmFy'}","{type: 'JSON', data: {foo: 'bar'}}","2021-02-05T19:14:42Z"
+"cluster-1","topic-1","1","[]","{type: 'STRING', data: 'Hello'}","{type: 'STRING', data: 'World'}","2021-02-05T19:14:42Z"
+"cluster-1","topic-1","1","[{name: 'Header-1', value: 'SGVhZGVyLTE='}, {name: 'Header-2', value: 'SGVhZGVyLTI='}]","{type: 'BINARY', data: 'Zm9vYmFy'}","{type: 'JSON', data: {foo: 'bar'}}","2021-02-05T19:14:42Z"
+"cluster-1","topic-1","1","[]","{type: 'STRING', data: 'Hello'}","{type: 'STRING', data: 'World'}","2021-02-05T19:14:42Z"

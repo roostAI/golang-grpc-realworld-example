@@ -1,0 +1,5 @@
+cluster_id,topic_name,include_authorized_operations
+"cluster-1","topic-1","false"
+"cluster-1","topic-1","true"
+"cluster-1","topic-1","false"
+"cluster-1","topic-1","true"

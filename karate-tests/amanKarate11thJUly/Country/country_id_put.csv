@@ -1,0 +1,2 @@
+id,appIdentifier,customerSecretKey,name,code,currencies,defaultCurrency,isActive
+"32","d645d2b40811f5672c93794d8622da45588f32cdb2ed85336475bf479e5d","12546580645c21b8a3529680f455f715b6b6829da8976bdfd2e9d51181fe","INDIA","IND","['INR', 'USD', 'EURO']","INR","1"
