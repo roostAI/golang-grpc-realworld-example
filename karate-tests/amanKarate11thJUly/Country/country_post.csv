@@ -1,0 +1,3 @@
+name,code,currencies,default_currency,is_active
+"INDIA","IND","['INR','USD','EURO']","INR","1"
+"USA","USA","['USD','EURO']","USD","0"
