@@ -1,0 +1,44 @@
+{
+  "scenarios": [
+    {
+      "type": "functional",
+      "title": "Basic Login Functionality",
+      "description": "Verify that users can successfully log in with valid credentials",
+      "testId": "TC-001",
+      "testDescription": "Test the core login functionality using valid username and password combinations",
+      "prerequisites": "- Valid user account exists in system\n- Login page is accessible\n- System is operational",
+      "stepsToPerform": "1. Navigate to login page\n2. Enter valid username 'testuser@example.com'\n3. Enter valid password 'Password123!'\n4. Click login button",
+      "expectedResult": "User successfully logs in and is redirected to dashboard"
+    },
+    {
+      "type": "functional", 
+      "title": "Invalid Login Attempt",
+      "description": "Verify system handles invalid login credentials appropriately",
+      "testId": "TC-002",
+      "testDescription": "Test system response when incorrect login credentials are provided",
+      "prerequisites": "- Login page is accessible\n- System is operational",
+      "stepsToPerform": "1. Navigate to login page\n2. Enter invalid username 'wrong@example.com'\n3. Enter invalid password 'WrongPass123'\n4. Click login button",
+      "expectedResult": "Error message displayed and user remains on login page"
+    },
+    {
+      "type": "non-functional",
+      "title": "Login Page Load Time",
+      "description": "Verify login page loads within acceptable time limits",
+      "testId": "TC-003",
+      "testDescription": "Measure and verify the load time of the login page meets performance requirements",
+      "prerequisites": "- Network connection is stable\n- Browser cache is cleared",
+      "stepsToPerform": "1. Open browser\n2. Clear browser cache\n3. Navigate to login page\n4. Measure page load time using browser dev tools",
+      "expectedResult": "Login page loads completely within 3 seconds"
+    },
+    {
+      "type": "non-functional",
+      "title": "Login Form Security",
+      "description": "Verify login form implements basic security measures",
+      "testId": "TC-004",
+      "testDescription": "Check implementation of essential security features in login form",
+      "prerequisites": "- Login page is accessible\n- HTTPS connection available",
+      "stepsToPerform": "1. Inspect login form HTML\n2. Check password field type\n3. Verify HTTPS protocol\n4. Test password copy-paste functionality\n5. Check for secure cookie attributes",
+      "expectedResult": "- Password field uses type='password'\n- Form submits via HTTPS\n- Secure cookies implemented\n- Basic XSS prevention in place"
+    }
+  ]
+}
